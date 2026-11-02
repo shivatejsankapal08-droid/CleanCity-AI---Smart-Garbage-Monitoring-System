@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Municipal Command Center – CleanCity AI{% endblock %}
+{% block page_title %}Municipal Command Center{% endblock %}
+{% block page_subtitle %}Live city-wide solid waste triage, intelligent dispatch, and field management{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 28px;">
+
+  <!-- Key KPI Metrics Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-primary">
+        <i class="fa-solid fa-dumpster"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.total }}</div>
+        <div class="metric-label">Total Complaints</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-danger">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.pending }}</div>
+        <div class="metric-label">Pending Triage</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-warning">
+        <i class="fa-solid fa-person-digging"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.assigned + stats.in_progress }}</div>
+        <div class="metric-label">Active Field Dispatches</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-info">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.resolved }}</div>
+        <div class="metric-label">Resolved ({{ stats.resolution_rate }}%)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hotspots Alert Banner if detected -->
+  {% if hotspots %}
+    <div class="card" style="
+      background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+      border: 1px solid #fed7aa;
+      padding: 18px 24px;
+    ">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="
+            width: 44px; height: 44px;
+            background: #ea580c;
+            color: #ffffff;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+          ">
+            <i class="fa-solid fa-bullseye"></i>
+          </div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: #9a3412;">
+              {{ hotspots|length }} Recurring Garbage Hotspot Clusters Detected
+            </h4>
+            <p style="font-size: 0.84rem; color: #c2410c;">
+              Haversine algorithm identified repeated dumping in high-density sectors. Immediate municipal patrol and extra public bins recommended.
+            </p>
+          </div>
+        </div>
+        <a href="{{ url_for('admin.map_view') }}" class="btn btn-warning btn-sm" style="background: #ea580c; color: #ffffff;">
+          <i class="fa-solid fa-map-location-dot"></i> View on Hotspot Map
+        </a>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Main Management Table -->
+  <div class="card">
+    <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+      <div class="card-title">
+        <i class="fa-solid fa-list-check"></i>
+        City-Wide Complaint Triage & Dispatch Table
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('admin.map_view') }}" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-map"></i> Open City Map
+        </a>
+        <a href="{{ url_for('admin.analytics_view') }}" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-chart-line"></i> View Analytics
+        </a>
+      </div>
+    </div>
+
+    {% if complaints %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th style="width: 80px;">Visual</th>
+              <th>Issue & Location</th>
+              <th>Citizen Reporter</th>
+              <th>AI Diagnosis</th>
+              <th>Priority Score</th>
+              <th>Status</th>
+              <th>Assigned Worker</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in complaints %}
+              <tr>
+                <td>
+                  <span style="font-weight: 800; color: var(--slate-700);">#{{ c.id }}</span>
+                </td>
+                <td>
+                  <div style="width: 56px; height: 56px; border-radius: var(--radius-sm); overflow: hidden; background: var(--slate-100); border: 1px solid var(--slate-200);">
+                    {% if c.before_image %}
+                      <img src="{{ url_for('static', filename='uploads/' + c.before_image) }}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--slate-400);">
+                        <i class="fa-solid fa-image"></i>
+                      </div>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--slate-900); font-size: 0.92rem; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ c.title }}">
+                    {{ c.title }}
+                  </div>
+                  <div style="font-size: 0.78rem; color: var(--slate-500); display: flex; align-items: center; gap: 4px; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ c.address }}">
+                    <i class="fa-solid fa-location-dot" style="color: var(--primary-600);"></i>
+                    {{ c.address or "Coordinates logged" }}
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 600; font-size: 0.85rem; color: var(--slate-800);">
+                    {{ c.citizen_name }}
+                  </div>
+                  <div style="font-size: 0.75rem; color: var(--slate-400);">
+                    {{ c.citizen_phone or "No phone" }}
+                  </div>
+                </td>
+                <td>
+                  <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                    <span class="badge badge-waste">
+                      <i class="fa-solid fa-recycle" style="color: var(--primary-600);"></i> {{ c.waste_type }}
+                    </span>
+                    <span class="badge badge-sev-{{ c.severity | lower }}">
+                      {{ c.severity }}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span class="badge" style="background-color: var(--slate-100); color: var(--slate-800); font-weight: 800;">
+                      {{ c.priority_info.priority_score }} / 100
+                    </span>
+                  </div>
+                  <div style="font-size: 0.7rem; color: var(--slate-400); margin-top: 2px;">
+                    {{ c.priority_info.badge_label }}
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-status-{{ c.status | lower | replace(' ', '') }}">
+                    {{ c.status }}
+                  </span>
+                </td>
+                <td>
+                  {% if c.assigned_worker_name %}
+                    <div style="font-weight: 700; font-size: 0.85rem; color: #0284c7;">
+                      <i class="fa-solid fa-truck-pickup"></i> {{ c.assigned_worker_name }}
+                    </div>
+                  {% else %}
+                    <span style="font-size: 0.8rem; color: var(--slate-400); font-style: italic;">
+                      Unassigned
+                    </span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right;">
+                  <div style="display: flex; justify-content: flex-end; gap: 6px;">
+                    <button 
+                      type="button" 
+                      class="btn btn-sm btn-primary" 
+                      title="Assign Worker"
+                      onclick="openAssignModal({{ c.id }}, '{{ c.title | escape }}')"
+                    >
+                      <i class="fa-solid fa-user-plus"></i>
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-sm btn-secondary" 
+                      title="Update Status"
+                      onclick="openStatusModal({{ c.id }}, '{{ c.status }}')"
+                    >
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <a 
+                      href="{{ url_for('citizen.complaint_detail', complaint_id=c.id) }}" 
+                      class="btn btn-sm btn-outline-primary"
+                      title="View Details"
+                    >
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 48px; color: var(--slate-500);">
+        No complaints currently registered in the database.
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Admin Assign Worker Modal -->
+<div id="adminAssignModal" class="modal-overlay">
+  <div class="modal-content">
+    <form method="POST" action="{{ url_for('admin.assign_worker') }}">
+      <input type="hidden" id="modal_assign_complaint_id" name="complaint_id">
+      
+      <div class="modal-header">
+        <h3 class="modal-title">Dispatch Sanitation Squad</h3>
+        <button type="button" class="alert-close" onclick="closeModal('adminAssignModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p id="modal_assign_complaint_title" style="font-weight: 700; color: var(--slate-700); margin-bottom: 14px; font-size: 0.9rem;"></p>
+
+        <div class="form-group">
+          <label for="modal_worker_id" class="form-label">Select Available Field Squad *</label>
+          <select id="modal_worker_id" name="worker_id" class="form-select" required>
+            {% for w in workers %}
+              <option value="{{ w.id }}">
+                {{ w.full_name }} ({{ w.zone }}) – {{ w.vehicle_type }} [{{ w.active_tasks }} active tasks]
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="modal_assign_notes" class="form-label">Special Instructions for Worker</label>
+          <textarea id="modal_assign_notes" name="assignment_notes" class="form-control" placeholder="e.g. Bring extra industrial bags, hazardous waste disposal needed..." rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('adminAssignModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-paper-plane"></i> Dispatch Squad
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Change Status Modal -->
+<div id="adminStatusModal" class="modal-overlay">
+  <div class="modal-content">
+    <form method="POST" action="{{ url_for('admin.update_status') }}">
+      <input type="hidden" id="modal_status_complaint_id" name="complaint_id">
+      
+      <div class="modal-header">
+        <h3 class="modal-title">Update Complaint Status</h3>
+        <button type="button" class="alert-close" onclick="closeModal('adminStatusModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="modal_new_status" class="form-label">New Status *</label>
+          <select id="modal_new_status" name="status" class="form-select" required>
+            <option value="Pending">Pending</option>
+            <option value="Assigned">Assigned</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="modal_status_notes" class="form-label">Audit Log Remarks</label>
+          <textarea id="modal_status_notes" name="notes" class="form-control" placeholder="Enter reason or verification details..." rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('adminStatusModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Status</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAssignModal(complaintId, title) {
+  document.getElementById('modal_assign_complaint_id').value = complaintId;
+  document.getElementById('modal_assign_complaint_title').innerText = `Target: #${complaintId} - ${title}`;
+  openModal('adminAssignModal');
+}
+
+function openStatusModal(complaintId, currentStatus) {
+  document.getElementById('modal_status_complaint_id').value = complaintId;
+  document.getElementById('modal_new_status').value = currentStatus;
+  openModal('adminStatusModal');
+}
+</script>
+{% endblock %}

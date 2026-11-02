@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Sanitation Fleet Management – CleanCity AI{% endblock %}
+{% block page_title %}Sanitation Fleet Operations & Roster{% endblock %}
+{% block page_subtitle %}Manage municipal field workers, operational zones, equipment vehicles, and task workloads{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+    <div class="card-title">
+      <i class="fa-solid fa-truck-pickup" style="color: var(--primary-600);"></i>
+      Registered Sanitation Field Squads
+    </div>
+    <div style="font-size: 0.82rem; color: var(--slate-500);">
+      Total Fleet: <b>{{ workers|length }} Squads Active</b>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Worker Name</th>
+          <th>Assigned Zone</th>
+          <th>Vehicle / Equipment</th>
+          <th>Contact & Email</th>
+          <th>Duty Status</th>
+          <th>Active Workload</th>
+          <th>Completed</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in workers %}
+          <tr>
+            <td>
+              <div style="font-weight: 800; color: var(--slate-900); font-size: 0.95rem;">
+                {{ w.full_name }}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--slate-400);">
+                Worker ID: #{{ w.id }}
+              </div>
+            </td>
+            <td>
+              <span class="badge" style="background: var(--slate-100); color: var(--slate-700);">
+                <i class="fa-solid fa-map-pin" style="color: var(--primary-600);"></i> {{ w.zone }}
+              </span>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; color: var(--slate-700);">
+                <i class="fa-solid fa-truck"></i> {{ w.vehicle_type }}
+              </div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; color: var(--slate-700);">{{ w.phone or 'Direct Line' }}</div>
+              <div style="font-size: 0.75rem; color: var(--slate-400);">{{ w.email }}</div>
+            </td>
+            <td>
+              <span class="badge" style="background: {% if w.status == 'Available' %}#d1fae5; color: #065f46;{% else %}#fee2e2; color: #991b1b;{% endif %}">
+                <i class="fa-solid fa-circle" style="font-size: 6px;"></i> {{ w.status }}
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <span class="badge badge-status-assigned" title="Assigned Tasks">
+                  {{ w.pending_tasks }} Assigned
+                </span>
+                <span class="badge badge-status-inprogress" title="In Progress Tasks">
+                  {{ w.in_progress_tasks }} In Progress
+                </span>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-status-resolved">
+                {{ w.completed_tasks }} Cleared
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <form method="POST" action="{{ url_for('admin.toggle_worker_status', worker_id=w.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-sm {% if w.status == 'Available' %}btn-secondary{% else %}btn-primary{% endif %}">
+                  Toggle Duty
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

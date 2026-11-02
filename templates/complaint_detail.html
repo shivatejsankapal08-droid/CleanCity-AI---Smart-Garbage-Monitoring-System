@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}Complaint #{{ complaint.id }} – CleanCity AI{% endblock %}
+{% block page_title %}Complaint Incident #{{ complaint.id }}{% endblock %}
+{% block page_subtitle %}Full AI diagnostic, geospatial telemetry, and field resolution tracking{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+  <!-- Header Card with Status & Priority -->
+  <div class="card">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--slate-900);">
+            {{ complaint.title }}
+          </h2>
+          <span class="badge badge-status-{{ complaint.status | lower | replace(' ', '') }}">
+            {{ complaint.status }}
+          </span>
+          <span class="badge badge-sev-{{ complaint.severity | lower }}">
+            {{ complaint.severity }} Severity
+          </span>
+        </div>
+        <div style="font-size: 0.88rem; color: var(--slate-500); display: flex; flex-wrap: wrap; gap: 14px;">
+          <span><i class="fa-solid fa-calendar-days" style="color: var(--primary-600);"></i> Reported: {{ complaint.created_at | dt_format }}</span>
+          <span><i class="fa-solid fa-location-dot" style="color: var(--primary-600);"></i> {{ complaint.address or "Coordinates logged" }}</span>
+          {% if complaint.landmark %}
+            <span><i class="fa-solid fa-map-pin" style="color: var(--primary-600);"></i> Landmark: {{ complaint.landmark }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Action buttons depending on role -->
+      <div style="display: flex; gap: 10px;">
+        {% if current_user and current_user.role == 'admin' %}
+          <button type="button" class="btn btn-primary btn-sm" onclick="openModal('assignModal')">
+            <i class="fa-solid fa-user-plus"></i> Assign Worker
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('statusModal')">
+            <i class="fa-solid fa-pen-to-square"></i> Update Status
+          </button>
+        {% endif %}
+        <a href="javascript:history.back()" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-arrow-left"></i> Back
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-Column Content Grid -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    
+    <!-- Left Column: Visual Evidence & AI Inspection -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      
+      <!-- Photos Comparison (Before vs After) -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-images"></i>
+            Visual Inspection Photographs
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: {% if images|length > 1 %}1fr 1fr{% else %}1fr{% endif %}; gap: 16px;">
+          {% for img in images %}
+            <div>
+              <div style="
+                border-radius: var(--radius-md);
+                overflow: hidden;
+                border: 1px solid var(--slate-200);
+                background-color: var(--slate-100);
+                height: 220px;
+                position: relative;
+              ">
+                <img 
+                  src="{{ url_for('static', filename='uploads/' + img.file_path) }}" 
+                  alt="{{ img.caption }}" 
+                  style="width: 100%; height: 100%; object-fit: cover;"
+                >
+                <span class="badge" style="
+                  position: absolute; top: 10px; left: 10px;
+                  background-color: {% if img.image_type == 'before' %}rgba(239, 68, 68, 0.9){% else %}rgba(16, 185, 129, 0.9){% endif %};
+                  color: #ffffff;
+                ">
+                  {{ img.image_type | upper }} CLEARANCE
+                </span>
+              </div>
+              <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 6px;">
+                {{ img.caption }} ({{ img.uploaded_at | dt_format }})
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if images|length == 1 and complaint.status != 'Resolved' %}
+          <div style="
+            margin-top: 14px;
+            padding: 10px 14px;
+            background: var(--slate-50);
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            color: var(--slate-500);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          ">
+            <i class="fa-solid fa-clock"></i>
+            Awaiting field sanitation worker resolution & post-cleaning verification photograph.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- AI Garbage Detection Deep Dive -->
+      <div class="card" style="border-left: 4px solid var(--primary-600);">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-brain" style="color: var(--primary-600);"></i>
+            Gemini AI Waste Diagnostics
+          </div>
+          <span class="badge badge-sev-low" style="background: var(--primary-50); color: var(--primary-700);">
+            Confidence: {{ (complaint.ai_confidence * 100) | round | int }}%
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div style="background: var(--slate-50); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Classified Stream</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: var(--slate-800); margin-top: 2px;">
+              <i class="fa-solid fa-recycle" style="color: var(--primary-600);"></i> {{ complaint.ai_waste_type or complaint.waste_type }}
+            </div>
+          </div>
+
+          <div style="background: var(--slate-50); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Estimated Severity</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: var(--slate-800); margin-top: 2px;">
+              <span class="badge badge-sev-{{ complaint.ai_severity | lower if complaint.ai_severity else complaint.severity | lower }}">
+                {{ complaint.ai_severity or complaint.severity }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {% if complaint.detected_items_list %}
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--slate-700); margin-bottom: 8px;">
+              Visually Identified Items:
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              {% for item in complaint.detected_items_list %}
+                <span style="
+                  background-color: var(--slate-100);
+                  color: var(--slate-700);
+                  padding: 4px 10px;
+                  border-radius: var(--radius-full);
+                  font-size: 0.78rem;
+                  font-weight: 600;
+                  border: 1px solid var(--slate-200);
+                ">
+                  <i class="fa-solid fa-tag" style="color: var(--primary-600); margin-right: 4px;"></i> {{ item }}
+                </span>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--slate-700); margin-bottom: 4px;">
+            AI Environmental & Hazard Assessment:
+          </div>
+          <p style="font-size: 0.86rem; color: var(--slate-600); line-height: 1.6;">
+            {{ complaint.ai_explanation or "Visual inspection confirms accumulation requiring clearance." }}
+          </p>
+        </div>
+
+        <div style="
+          background-color: var(--primary-50);
+          border: 1px solid var(--primary-200);
+          border-radius: var(--radius-md);
+          padding: 14px;
+        ">
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--primary-800); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-shield-virus"></i> Recommended Municipal Response
+          </div>
+          <p style="font-size: 0.84rem; color: var(--primary-900); line-height: 1.5;">
+            {{ complaint.ai_recommendation or "Deploy standard sanitation vehicle with protective equipment." }}
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Location Map & Status Timeline -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+      <!-- Location Pinpoint Mini-Map -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-map-location-dot"></i>
+            Geospatial Location
+          </div>
+          {% if complaint.latitude and complaint.longitude %}
+            <a 
+              href="https://www.google.com/maps/dir/?api=1&destination={{ complaint.latitude }},{{ complaint.longitude }}" 
+              target="_blank" 
+              class="btn btn-outline-primary btn-sm"
+            >
+              <i class="fa-solid fa-diamond-turn-right"></i> Navigate (External)
+            </a>
+          {% endif %}
+        </div>
+
+        <div id="detail-mini-map" class="mini-map" style="height: 250px;"></div>
+
+        <div style="margin-top: 12px; font-size: 0.82rem; color: var(--slate-600); display: flex; flex-direction: column; gap: 4px;">
+          <div><b>Address:</b> {{ complaint.address or "Address not specified" }}</div>
+          <div><b>GPS Coordinates:</b> {{ complaint.latitude }}, {{ complaint.longitude }}</div>
+        </div>
+      </div>
+
+      <!-- Field Squad Assignment Details (If Assigned) -->
+      {% if assignment %}
+        <div class="card" style="border-left: 4px solid #0284c7;">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-truck-pickup" style="color: #0284c7;"></i>
+              Assigned Sanitation Squad
+            </div>
+            <span class="badge badge-status-assigned">{{ assignment.status }}</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.86rem;">
+            <div>
+              <span style="color: var(--slate-500);">Worker:</span>
+              <div style="font-weight: 700; color: var(--slate-800);">{{ assignment.worker_name }}</div>
+            </div>
+            <div>
+              <span style="color: var(--slate-500);">Field Zone:</span>
+              <div style="font-weight: 700; color: var(--slate-800);">{{ assignment.worker_zone }}</div>
+            </div>
+            <div>
+              <span style="color: var(--slate-500);">Contact Phone:</span>
+              <div style="font-weight: 700; color: var(--slate-800);">{{ assignment.worker_phone or "Radio Comms" }}</div>
+            </div>
+            <div>
+              <span style="color: var(--slate-500);">Dispatch Timestamp:</span>
+              <div style="font-weight: 700; color: var(--slate-800);">{{ assignment.assigned_at }}</div>
+            </div>
+          </div>
+
+          {% if assignment.notes %}
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--slate-100); font-size: 0.82rem; color: var(--slate-600);">
+              <b>Dispatch Remarks:</b> {{ assignment.notes }}
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- Complaint Status Lifecycle Timeline -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-timeline"></i>
+            Lifecycle Status History
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px; padding-left: 8px;">
+          {% for event in timeline %}
+            <div style="display: flex; gap: 14px; position: relative;">
+              <!-- Timeline Icon/Bullet -->
+              <div style="
+                width: 32px; height: 32px;
+                border-radius: 50%;
+                background-color: var(--primary-100);
+                color: var(--primary-700);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.85rem;
+                flex-shrink: 0;
+                border: 2px solid #ffffff;
+                box-shadow: 0 0 0 2px var(--primary-500);
+              ">
+                <i class="fa-solid fa-check"></i>
+              </div>
+
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-weight: 800; font-size: 0.9rem; color: var(--slate-800);">
+                    {{ event.new_status }}
+                  </span>
+                  <span style="font-size: 0.75rem; color: var(--slate-400);">
+                    {{ event.created_at | dt_format }}
+                  </span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--slate-600); margin-top: 2px;">
+                  {{ event.notes }}
+                </p>
+                {% if event.actor_name %}
+                  <div style="font-size: 0.72rem; color: var(--slate-400); margin-top: 2px;">
+                    Updated by: {{ event.actor_name }} ({{ event.actor_role | capitalize }})
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Admin Modals if authorized -->
+{% if current_user and current_user.role == 'admin' %}
+  <!-- Assign Modal -->
+  <div id="assignModal" class="modal-overlay">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.assign_worker') }}">
+        <input type="hidden" name="complaint_id" value="{{ complaint.id }}">
+        
+        <div class="modal-header">
+          <h3 class="modal-title">Assign Sanitation Worker</h3>
+          <button type="button" class="alert-close" onclick="closeModal('assignModal')">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="worker_id" class="form-label">Select Field Squad / Worker *</label>
+            <select id="worker_id" name="worker_id" class="form-select" required>
+              <!-- Query workers dynamically or pass in template -->
+              <option value="1">Marcus Vance – Downtown Sector 4 (Garbage Truck A-12)</option>
+              <option value="2">Elena Rostova – North Riverside (Recycling Compactor C-04)</option>
+              <option value="3">Carlos Mendez – Westside Boulevard (Rapid Clearance Van V-09)</option>
+              <option value="4">Aisha Khan – Tech Park & Metro (Heavy Duty Loader L-02)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="assignment_notes" class="form-label">Dispatch Instructions</label>
+            <textarea id="assignment_notes" name="assignment_notes" class="form-control" placeholder="Specific notes, gate code, priority instructions..." rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('assignModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Dispatch Worker</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Status Update Modal -->
+  <div id="statusModal" class="modal-overlay">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.update_status') }}">
+        <input type="hidden" name="complaint_id" value="{{ complaint.id }}">
+        
+        <div class="modal-header">
+          <h3 class="modal-title">Change Complaint Status</h3>
+          <button type="button" class="alert-close" onclick="closeModal('statusModal')">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="status" class="form-label">Select New Status *</label>
+            <select id="status" name="status" class="form-select" required>
+              <option value="Pending" {% if complaint.status == 'Pending' %}selected{% endif %}>Pending</option>
+              <option value="Assigned" {% if complaint.status == 'Assigned' %}selected{% endif %}>Assigned</option>
+              <option value="In Progress" {% if complaint.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+              <option value="Resolved" {% if complaint.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+              <option value="Rejected" {% if complaint.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="notes" class="form-label">Administrative Log Notes</label>
+            <textarea id="notes" name="notes" class="form-control" placeholder="Reason for status change..." rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('statusModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Status</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const lat = {{ complaint.latitude or 40.7128 }};
+  const lng = {{ complaint.longitude or -74.0060 }};
+  
+  const map = L.map('detail-mini-map').setView([lat, lng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  const marker = L.marker([lat, lng], {
+    icon: getMarkerIcon('{{ complaint.severity }}', '{{ complaint.status }}')
+  }).addTo(map);
+
+  marker.bindPopup(`
+    <b>{{ complaint.title }}</b><br>
+    Status: {{ complaint.status }}<br>
+    Severity: {{ complaint.severity }}
+  `).openPopup();
+
+  setTimeout(() => map.invalidateSize(), 300);
+});
+</script>
+{% endblock %}

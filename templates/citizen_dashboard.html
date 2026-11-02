@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Citizen Hub – CleanCity AI{% endblock %}
+{% block page_title %}Citizen Portal{% endblock %}
+{% block page_subtitle %}Report municipal garbage, track real-time resolution, and keep your community clean{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 28px;">
+
+  <!-- Quick Action & CTA Banner -->
+  <div class="card" style="
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #ffffff;
+    border: none;
+    padding: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.4);
+  ">
+    <div>
+      <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 6px;">
+        <i class="fa-solid fa-camera"></i> Quick Citizen Action
+      </div>
+      <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em;">
+        Spotted Garbage on the Street?
+      </h2>
+      <p style="opacity: 0.92; font-size: 0.95rem; max-width: 580px;">
+        Snap a picture and submit a report. Our Gemini AI model will automatically analyze the waste type and dispatch the nearest sanitation crew.
+      </p>
+    </div>
+    <a href="{{ url_for('citizen.report_garbage') }}" class="btn btn-lg" style="background: #ffffff; color: #047857; font-weight: 800; box-shadow: var(--shadow-md);">
+      <i class="fa-solid fa-camera"></i> Report Garbage Now
+    </a>
+  </div>
+
+  <!-- Metric Counters -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-primary">
+        <i class="fa-solid fa-file-invoice"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.total }}</div>
+        <div class="metric-label">Total Reported by You</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-warning">
+        <i class="fa-solid fa-hourglass-half"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.pending }}</div>
+        <div class="metric-label">Under Municipal Review</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-info">
+        <i class="fa-solid fa-truck-fast"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.active }}</div>
+        <div class="metric-label">Assigned / In Progress</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-primary" style="background-color: #ecfdf5; color: #059669;">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.resolved }}</div>
+        <div class="metric-label">Cleaned & Verified</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Reported Complaints -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        Your Recent Garbage Reports
+      </div>
+      <a href="{{ url_for('citizen.complaints_list') }}" class="btn btn-secondary btn-sm">
+        View All Complaints ({{ stats.total }})
+      </a>
+    </div>
+
+    {% if complaints %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+        {% for comp in complaints %}
+          <div style="
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+          " onmouseover="this.style.borderColor='var(--primary-500)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--slate-200)'; this.style.transform='none'">
+            
+            <!-- Image Thumbnail -->
+            <div style="position: relative; height: 180px; background-color: var(--slate-100); overflow: hidden;">
+              {% if comp.before_image %}
+                <img src="{{ url_for('static', filename='uploads/' + comp.before_image) }}" alt="{{ comp.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+              {% else %}
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--slate-400);">
+                  <i class="fa-solid fa-image fa-2x"></i>
+                </div>
+              {% endif %}
+
+              <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 6px;">
+                <span class="badge badge-status-{{ comp.status | lower | replace(' ', '') }}">
+                  {{ comp.status }}
+                </span>
+                <span class="badge badge-sev-{{ comp.severity | lower }}">
+                  {{ comp.severity }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
+              <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--slate-900); margin-bottom: 6px; line-height: 1.3;">
+                {{ comp.title }}
+              </h3>
+              
+              <div style="font-size: 0.8rem; color: var(--slate-500); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-location-dot" style="color: var(--primary-600);"></i>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ comp.address or "Location coordinates recorded" }}</span>
+              </div>
+
+              <!-- AI Detection Pill -->
+              <div style="
+                background-color: var(--slate-50);
+                border: 1px solid var(--slate-200);
+                border-radius: var(--radius-sm);
+                padding: 8px 10px;
+                font-size: 0.8rem;
+                margin-bottom: 16px;
+              ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: var(--slate-700);">
+                    <i class="fa-solid fa-robot" style="color: var(--primary-600);"></i> AI Waste Type:
+                  </span>
+                  <span class="badge badge-waste">{{ comp.waste_type }}</span>
+                </div>
+                <div style="color: var(--slate-600); font-size: 0.76rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                  {{ comp.ai_explanation or comp.description }}
+                </div>
+              </div>
+
+              <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; pt: 12px; border-top: 1px solid var(--slate-100);">
+                <span style="font-size: 0.75rem; color: var(--slate-400);">
+                  {{ comp.created_at | dt_format(10) }}
+                </span>
+                <a href="{{ url_for('citizen.complaint_detail', complaint_id=comp.id) }}" class="btn btn-outline-primary btn-sm">
+                  View Full Tracking <i class="fa-solid fa-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 48px 20px; color: var(--slate-500);">
+        <div style="font-size: 2.5rem; color: var(--primary-500); margin-bottom: 12px;">
+          <i class="fa-solid fa-clipboard-check"></i>
+        </div>
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--slate-800); margin-bottom: 6px;">No complaints filed yet</h3>
+        <p style="font-size: 0.9rem; max-width: 420px; margin: 0 auto 20px auto;">
+          You haven't reported any garbage issues yet. Your neighborhood is clean, or you can submit your first report now!
+        </p>
+        <a href="{{ url_for('citizen.report_garbage') }}" class="btn btn-primary">
+          <i class="fa-solid fa-camera"></i> Report First Garbage Issue
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

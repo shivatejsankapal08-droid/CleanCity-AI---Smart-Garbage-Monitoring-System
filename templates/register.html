@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Register – CleanCity AI{% endblock %}
+{% block page_title %}Account Registration{% endblock %}
+{% block page_subtitle %}Join the community to report municipal garbage and improve your city{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px; margin: 30px auto;">
+  <div class="card" style="box-shadow: var(--shadow-lg);">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--slate-900);">Create an Account</h2>
+      <p style="font-size: 0.85rem; color: var(--slate-500);">Join CleanCity AI to report and track municipal cleanup</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.register') }}">
+      <div class="form-group">
+        <label for="name" class="form-label">Full Name *</label>
+        <input type="text" id="name" name="name" class="form-control" placeholder="Jane Doe" required autofocus>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address *</label>
+          <input type="email" id="email" name="email" class="form-control" placeholder="jane@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="phone" class="form-label">Phone Number</label>
+          <input type="text" id="phone" name="phone" class="form-control" placeholder="+1-555-0123">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="address" class="form-label">Residential Address / Neighborhood</label>
+        <input type="text" id="address" name="address" class="form-control" placeholder="e.g. 142 Riverview Terrace">
+      </div>
+
+      <div class="form-group">
+        <label for="role" class="form-label">Account Role *</label>
+        <select id="role" name="role" class="form-select" onchange="toggleWorkerFields(this.value)">
+          <option value="citizen" selected>Citizen Reporter</option>
+          <option value="worker">Sanitation Field Worker</option>
+        </select>
+      </div>
+
+      <!-- Worker Specific Fields -->
+      <div id="worker-fields" style="display: none; background: var(--slate-50); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--slate-200); margin-bottom: 20px;">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="zone" class="form-label">Sanitation Patrol Zone</label>
+          <input type="text" id="zone" name="zone" class="form-control" placeholder="e.g. Central Commercial District">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="vehicle_type" class="form-label">Assigned Vehicle / Equipment</label>
+          <input type="text" id="vehicle_type" name="vehicle_type" class="form-control" placeholder="e.g. Garbage Compactor Truck A-08">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="password" class="form-label">Password *</label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="At least 6 characters" minlength="6" required>
+        </div>
+
+        <div class="form-group">
+          <label for="confirm_password" class="form-label">Confirm Password *</label>
+          <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Re-enter password" minlength="6" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">
+        <i class="fa-solid fa-user-check"></i> Complete Registration
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--slate-100); font-size: 0.88rem; color: var(--slate-600);">
+      Already have an account? 
+      <a href="{{ url_for('auth.login') }}" style="font-weight: 700; color: var(--primary-700);">Sign In here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleWorkerFields(val) {
+  const fields = document.getElementById('worker-fields');
+  if (fields) {
+    fields.style.display = (val === 'worker') ? 'block' : 'none';
+  }
+}
+</script>
+{% endblock %}

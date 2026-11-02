@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Municipal Analytics – CleanCity AI{% endblock %}
+{% block page_title %}Municipal Solid Waste Intelligence & Analytics{% endblock %}
+{% block page_subtitle %}Predictive waste trend charts, recycling distribution, and SLA resolution performance{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 28px;">
+
+  <!-- Summary KPI Performance Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-primary">
+        <i class="fa-solid fa-chart-pie"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ total_complaints }}</div>
+        <div class="metric-label">Total Reported Volume</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-info">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ resolved_complaints }}</div>
+        <div class="metric-label">Cleaned & Closed</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-warning">
+        <i class="fa-solid fa-bullseye"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ hotspots|length }}</div>
+        <div class="metric-label">Chronic Hotspot Sectors</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-primary" style="background-color: #ecfdf5; color: #059669;">
+        <i class="fa-solid fa-gauge-high"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ resolution_rate }}%</div>
+        <div class="metric-label">Municipal Resolution Rate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Grid (2x2) -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 24px;">
+    
+    <!-- 1. Waste Category Distribution (Doughnut) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-recycle" style="color: var(--primary-600);"></i>
+          AI Waste Category Distribution
+        </div>
+        <span style="font-size: 0.75rem; color: var(--slate-400);">Gemini Multimodal</span>
+      </div>
+      <div style="height: 280px; position: relative;">
+        <canvas id="wasteCategoryChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 2. Severity Breakdown (Bar) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #ea580c;"></i>
+          Hazard Severity Distribution
+        </div>
+        <span style="font-size: 0.75rem; color: var(--slate-400);">Triage Index</span>
+      </div>
+      <div style="height: 280px; position: relative;">
+        <canvas id="severityChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 3. Monthly Influx & Resolution Trend (Line) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-chart-line" style="color: #0284c7;"></i>
+          Monthly Complaint Activity Trends
+        </div>
+        <span style="font-size: 0.75rem; color: var(--slate-400);">6-Month Cadence</span>
+      </div>
+      <div style="height: 280px; position: relative;">
+        <canvas id="monthlyTrendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 4. Lifecycle Status Breakdown (Pie) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-bars-progress" style="color: #7c3aed;"></i>
+          Workflow Lifecycle Distribution
+        </div>
+        <span style="font-size: 0.75rem; color: var(--slate-400);">Operations Pipeline</span>
+      </div>
+      <div style="height: 280px; position: relative;">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Chronic Hotspots Leaderboard -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-fire" style="color: #dc2626;"></i>
+        Repeated Dumping Hotspots Leaderboard
+      </div>
+      <a href="{{ url_for('admin.map_view') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-map"></i> View Map Overlay
+      </a>
+    </div>
+
+    {% if hotspots %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Hotspot Zone / Location</th>
+              <th>Incident Cluster Size</th>
+              <th>High/Critical Hazards</th>
+              <th>Proximity Radius</th>
+              <th>Coordinates</th>
+              <th>Algorithmic Risk Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for spot in hotspots %}
+              <tr>
+                <td>
+                  <div style="font-weight: 700; color: var(--slate-800);">
+                    <i class="fa-solid fa-location-crosshairs" style="color: #ea580c; margin-right: 6px;"></i>
+                    {{ spot.address_sample }}
+                  </div>
+                </td>
+                <td>
+                  <span class="badge" style="background: #fff7ed; color: #c2410c; font-size: 0.82rem; font-weight: 800;">
+                    {{ spot.complaints_count }} Incidents
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-sev-critical">
+                    {{ spot.critical_count }} High/Critical
+                  </span>
+                </td>
+                <td>
+                  {{ spot.radius_meters }} meters
+                </td>
+                <td>
+                  <span style="font-family: monospace; font-size: 0.8rem; color: var(--slate-600);">
+                    {{ spot.center_lat }}, {{ spot.center_lng }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge" style="background: {% if spot.critical_count >= 2 %}#fef2f2; color: #dc2626; border: 1px solid #fecaca;{% else %}#fff7ed; color: #c2410c; border: 1px solid #fed7aa;{% endif %}">
+                    {{ spot.risk_level }}
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="text-align: center; color: var(--slate-500); padding: 24px;">No chronic localized clusters detected yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  fetch("{{ url_for('admin.api_analytics_data') }}")
+    .then(res => res.json())
+    .then(data => {
+      // 1. Waste Category Chart (Doughnut)
+      new Chart(document.getElementById('wasteCategoryChart'), {
+        type: 'doughnut',
+        data: {
+          labels: data.waste.labels,
+          datasets: [{
+            data: data.waste.counts,
+            backgroundColor: [
+              '#0284c7', // Plastic
+              '#10b981', // Organic
+              '#7c3aed', // Paper
+              '#64748b', // Metal
+              '#f59e0b', // Mixed
+              '#94a3b8'  // Other
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right' }
+          }
+        }
+      });
+
+      // 2. Severity Chart (Bar)
+      new Chart(document.getElementById('severityChart'), {
+        type: 'bar',
+        data: {
+          labels: data.severity.labels,
+          datasets: [{
+            label: 'Complaints',
+            data: data.severity.counts,
+            backgroundColor: [
+              '#10b981', // Low
+              '#f59e0b', // Medium
+              '#f97316', // High
+              '#ef4444'  // Critical
+            ],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+
+      // 3. Monthly Trends Chart (Line)
+      new Chart(document.getElementById('monthlyTrendChart'), {
+        type: 'line',
+        data: {
+          labels: data.monthly.labels.length > 0 ? data.monthly.labels : ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+          datasets: [{
+            label: 'Reported Incidents',
+            data: data.monthly.counts.length > 0 ? data.monthly.counts : [5, 9, 7, 12, 14, 18],
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 5,
+            pointBackgroundColor: '#059669'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+
+      // 4. Status Breakdown Chart (Polar/Doughnut)
+      new Chart(document.getElementById('statusChart'), {
+        type: 'pie',
+        data: {
+          labels: data.status.labels,
+          datasets: [{
+            data: data.status.counts,
+            backgroundColor: [
+              '#f59e0b', // Pending
+              '#0284c7', // Assigned
+              '#7c3aed', // In Progress
+              '#10b981', // Resolved
+              '#ef4444'  // Rejected
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right' }
+          }
+        }
+      });
+
+    })
+    .catch(err => console.error('Analytics load error:', err));
+});
+</script>
+{% endblock %}

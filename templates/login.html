@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In – CleanCity AI{% endblock %}
+{% block page_title %}Sign In{% endblock %}
+{% block page_subtitle %}Access your citizen, worker, or administrative dashboard{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 40px auto;">
+  <div class="card" style="box-shadow: var(--shadow-lg);">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="
+        width: 54px; height: 54px;
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+        color: #ffffff;
+        border-radius: var(--radius-md);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+      ">
+        <i class="fa-solid fa-leaf"></i>
+      </div>
+      <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--slate-900);">CleanCity AI Portal</h2>
+      <p style="font-size: 0.85rem; color: var(--slate-500);">Sign in with your municipal or citizen account</p>
+    </div>
+
+    <!-- Quick 1-Click Demo Fillers -->
+    <div style="background-color: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 12px; margin-bottom: 20px;">
+      <div style="font-size: 0.75rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; margin-bottom: 8px;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> 1-Click Demo Access
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-sm btn-outline-primary" style="flex: 1;" onclick="fillCredentials('citizen@cleancity.ai', 'Citizen@123')">
+          Citizen
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary" style="flex: 1;" onclick="fillCredentials('worker1@cleancity.ai', 'Worker@123')">
+          Worker
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" style="flex: 1;" onclick="fillCredentials('admin@cleancity.ai', 'Admin@123')">
+          Admin
+        </button>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.login') }}" id="login-form">
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="name@cleancity.ai" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--slate-100); font-size: 0.88rem; color: var(--slate-600);">
+      Don't have an account yet? 
+      <a href="{{ url_for('auth.register') }}" style="font-weight: 700; color: var(--primary-700);">Register as Citizen</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fillCredentials(email, password) {
+  document.getElementById('email').value = email;
+  document.getElementById('password').value = password;
+}
+
+// Auto-fill if query parameter present
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const demo = urlParams.get('demo');
+  if (demo === 'admin') {
+    fillCredentials('admin@cleancity.ai', 'Admin@123');
+  } else if (demo === 'worker') {
+    fillCredentials('worker1@cleancity.ai', 'Worker@123');
+  } else if (demo === 'citizen') {
+    fillCredentials('citizen@cleancity.ai', 'Citizen@123');
+  }
+});
+</script>
+{% endblock %}

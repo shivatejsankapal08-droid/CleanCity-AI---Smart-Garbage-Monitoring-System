@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}CleanCity AI – AI-Powered Smart Garbage Monitoring System{% endblock %}
+{% block page_title %}CleanCity AI Platform{% endblock %}
+{% block page_subtitle %}Next-generation AI solid waste monitoring, citizen triage & smart dispatch{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 32px;">
+
+  <!-- Hero Section -->
+  <div class="card" style="
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 100%);
+    color: #ffffff;
+    border: none;
+    padding: 48px 36px;
+    border-radius: var(--radius-lg);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(6, 78, 59, 0.4);
+  ">
+    <div style="max-width: 720px; position: relative; z-index: 2;">
+      <div style="
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        padding: 6px 14px;
+        border-radius: var(--radius-full);
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      ">
+        <i class="fa-solid fa-sparkles"></i> Autonomous Municipal AI Triage & IoT Mapping
+      </div>
+
+      <h1 style="font-size: 2.5rem; font-weight: 800; line-height: 1.15; margin-bottom: 16px; letter-spacing: -0.03em;">
+        AI-Powered Smart Garbage Monitoring & Rapid Sanitation
+      </h1>
+      <p style="font-size: 1.05rem; opacity: 0.9; margin-bottom: 28px; line-height: 1.6; font-weight: 500;">
+        Empowering citizens and municipal authorities with instant Gemini computer vision waste classification, automated hazard scoring, geospatial hotspot clustering, and field crew telemetry.
+      </p>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 14px;">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-lg" style="background-color: #ffffff; color: var(--primary-800); box-shadow: var(--shadow-md);">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal
+        </a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-lg btn-outline-primary" style="border-color: rgba(255,255,255,0.4); color: #ffffff; background: rgba(255,255,255,0.08);">
+          <i class="fa-solid fa-user-plus"></i> Citizen Registration
+        </a>
+        <a href="{{ url_for('public_map') }}" class="btn btn-lg" style="background: rgba(16, 185, 129, 0.3); border: 1px solid rgba(255,255,255,0.3); color: #ffffff;">
+          <i class="fa-solid fa-map-location-dot"></i> View Garbage Map
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-time Municipal Metrics -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-primary">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.total }}</div>
+        <div class="metric-label">Complaints Processed</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-info">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.resolved }}</div>
+        <div class="metric-label">Resolved Cleanups</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-warning">
+        <i class="fa-solid fa-percent"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.rate }}%</div>
+        <div class="metric-label">City Resolution Rate</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-danger">
+        <i class="fa-solid fa-truck-moving"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.workers }}</div>
+        <div class="metric-label">Active Field Squads</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Demo Access Cards (Instruction #8: Create sample demonstration data & easy testing) -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-key"></i>
+        Instant Demo Roles & Credentials
+      </div>
+      <span class="badge badge-sev-low">Ready for Instant Evaluation</span>
+    </div>
+    <p style="font-size: 0.9rem; color: var(--slate-600); margin-bottom: 18px;">
+      Click any profile below to autofill or sign into pre-configured accounts with seeded sample complaints, worker assignments, and map pins:
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+      <!-- Admin Card -->
+      <div style="border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 18px; background: #ffffff;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; color: var(--slate-900);">Municipal Administrator</div>
+            <div style="font-size: 0.75rem; color: var(--slate-500);">Full triage, worker dispatch & analytics</div>
+          </div>
+        </div>
+        <div style="font-size: 0.82rem; background: var(--slate-50); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-family: monospace;">
+          Email: <b>admin@cleancity.ai</b><br>
+          Pass: <b>Admin@123</b>
+        </div>
+        <a href="{{ url_for('auth.login') }}?demo=admin" class="btn btn-primary btn-sm" style="width: 100%;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In as Admin
+        </a>
+      </div>
+
+      <!-- Worker Card -->
+      <div style="border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 18px; background: #ffffff;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-broom"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; color: var(--slate-900);">Sanitation Worker</div>
+            <div style="font-size: 0.75rem; color: var(--slate-500);">Task execution & photo verification</div>
+          </div>
+        </div>
+        <div style="font-size: 0.82rem; background: var(--slate-50); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-family: monospace;">
+          Email: <b>worker1@cleancity.ai</b><br>
+          Pass: <b>Worker@123</b>
+        </div>
+        <a href="{{ url_for('auth.login') }}?demo=worker" class="btn btn-secondary btn-sm" style="width: 100%;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In as Worker
+        </a>
+      </div>
+
+      <!-- Citizen Card -->
+      <div style="border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 18px; background: #ffffff;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-camera"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; color: var(--slate-900);">Citizen Reporter</div>
+            <div style="font-size: 0.75rem; color: var(--slate-500);">Upload photos & track complaints</div>
+          </div>
+        </div>
+        <div style="font-size: 0.82rem; background: var(--slate-50); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-family: monospace;">
+          Email: <b>citizen@cleancity.ai</b><br>
+          Pass: <b>Citizen@123</b>
+        </div>
+        <a href="{{ url_for('auth.login') }}?demo=citizen" class="btn btn-outline-primary btn-sm" style="width: 100%;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In as Citizen
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Architecture Features -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    <div class="card">
+      <div style="font-size: 1.5rem; color: var(--primary-600); margin-bottom: 12px;">
+        <i class="fa-solid fa-brain"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 8px; color: var(--slate-900);">Gemini Multimodal AI</h3>
+      <p style="font-size: 0.88rem; color: var(--slate-600); line-height: 1.6;">
+        Classifies uploaded photographs into 6 strict waste categories (Plastic, Organic, Metal, Paper, Mixed, Other) and provides actionable cleanup recommendations.
+      </p>
+    </div>
+
+    <div class="card">
+      <div style="font-size: 1.5rem; color: #0284c7; margin-bottom: 12px;">
+        <i class="fa-solid fa-bullseye"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 8px; color: var(--slate-900);">Algorithmic Hotspot Clustering</h3>
+      <p style="font-size: 0.88rem; color: var(--slate-600); line-height: 1.6;">
+        Uses haversine proximity clustering to identify chronic illegal dump zones and notify municipal planners for permanent bin installations.
+      </p>
+    </div>
+
+    <div class="card">
+      <div style="font-size: 1.5rem; color: #7c3aed; margin-bottom: 12px;">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 8px; color: var(--slate-900);">Proof of Cleanliness (PoC)</h3>
+      <p style="font-size: 0.88rem; color: var(--slate-600); line-height: 1.6;">
+        Sanitation workers upload timestamped after-cleaning photographs before a complaint can be transitioned into Resolved status.
+      </p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

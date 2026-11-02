@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}My Complaints – CleanCity AI{% endblock %}
+{% block page_title %}Complaints Registry{% endblock %}
+{% block page_subtitle %}Review status, AI triage, and resolution proofs for all submitted complaints{% endblock %}
+
+{% block content %}
+<div class="card">
+  <!-- Header & Filters -->
+  <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+    <div class="card-title">
+      <i class="fa-solid fa-clipboard-list"></i>
+      Reported Garbage Incidents
+    </div>
+    
+    <!-- Status Filter Buttons -->
+    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <a href="{{ url_for('citizen.complaints_list', status='all') }}" class="btn btn-sm {% if active_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+        All
+      </a>
+      <a href="{{ url_for('citizen.complaints_list', status='Pending') }}" class="btn btn-sm {% if active_filter == 'Pending' %}btn-primary{% else %}btn-secondary{% endif %}">
+        Pending
+      </a>
+      <a href="{{ url_for('citizen.complaints_list', status='Assigned') }}" class="btn btn-sm {% if active_filter == 'Assigned' %}btn-primary{% else %}btn-secondary{% endif %}">
+        Assigned
+      </a>
+      <a href="{{ url_for('citizen.complaints_list', status='In Progress') }}" class="btn btn-sm {% if active_filter == 'In Progress' %}btn-primary{% else %}btn-secondary{% endif %}">
+        In Progress
+      </a>
+      <a href="{{ url_for('citizen.complaints_list', status='Resolved') }}" class="btn btn-sm {% if active_filter == 'Resolved' %}btn-primary{% else %}btn-secondary{% endif %}">
+        Resolved
+      </a>
+    </div>
+  </div>
+
+  {% if complaints %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 70px;">ID</th>
+            <th style="width: 90px;">Photo</th>
+            <th>Title & Location</th>
+            <th>Waste Classification</th>
+            <th>Severity</th>
+            <th>Current Status</th>
+            <th>Reported Date</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in complaints %}
+            <tr>
+              <td>
+                <span style="font-weight: 800; color: var(--slate-600);">#{{ c.id }}</span>
+              </td>
+              <td>
+                <div style="width: 60px; height: 60px; border-radius: var(--radius-sm); overflow: hidden; background: var(--slate-100); border: 1px solid var(--slate-200);">
+                  {% if c.before_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + c.before_image) }}" alt="Garbage" style="width: 100%; height: 100%; object-fit: cover;">
+                  {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--slate-400);">
+                      <i class="fa-solid fa-image"></i>
+                    </div>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                <div style="font-weight: 700; color: var(--slate-900); margin-bottom: 2px;">
+                  {{ c.title }}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--slate-500); display: flex; align-items: center; gap: 4px;">
+                  <i class="fa-solid fa-location-dot" style="color: var(--primary-600);"></i>
+                  {{ c.address or "Location recorded" }}
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-waste">
+                  <i class="fa-solid fa-recycle" style="color: var(--primary-600);"></i>
+                  {{ c.waste_type }}
+                </span>
+              </td>
+              <td>
+                <span class="badge badge-sev-{{ c.severity | lower }}">
+                  {{ c.severity }}
+                </span>
+              </td>
+              <td>
+                <span class="badge badge-status-{{ c.status | lower | replace(' ', '') }}">
+                  {{ c.status }}
+                </span>
+              </td>
+              <td>
+                <span style="font-size: 0.82rem; color: var(--slate-500);">
+                  {{ c.created_at | dt_format(10) }}
+                </span>
+              </td>
+              <td style="text-align: right;">
+                <a href="{{ url_for('citizen.complaint_detail', complaint_id=c.id) }}" class="btn btn-outline-primary btn-sm">
+                  View Detail <i class="fa-solid fa-arrow-right"></i>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 48px 20px; color: var(--slate-500);">
+      <div style="font-size: 2.2rem; color: var(--slate-400); margin-bottom: 12px;">
+        <i class="fa-solid fa-folder-open"></i>
+      </div>
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--slate-700); margin-bottom: 4px;">No complaints match this filter</h3>
+      <p style="font-size: 0.85rem;">Try selecting a different status filter above.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

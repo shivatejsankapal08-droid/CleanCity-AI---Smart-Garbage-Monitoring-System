@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Field Operations – CleanCity AI{% endblock %}
+{% block page_title %}Sanitation Field Operations{% endblock %}
+{% block page_subtitle %}Execute cleanup tasks, document site clearance with after-photos, and track resolution{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 28px;">
+
+  <!-- Worker Fleet Identity Card -->
+  <div class="card" style="
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #ffffff;
+    border: none;
+    padding: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  ">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="
+        width: 52px; height: 52px;
+        background: var(--primary-600);
+        color: #ffffff;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+      ">
+        <i class="fa-solid fa-truck-pickup"></i>
+      </div>
+      <div>
+        <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 4px;">
+          Squad Operator: {{ worker.full_name }}
+        </h2>
+        <div style="font-size: 0.82rem; opacity: 0.85; display: flex; gap: 14px;">
+          <span><i class="fa-solid fa-map-pin"></i> Assigned Zone: <b>{{ worker.zone }}</b></span>
+          <span><i class="fa-solid fa-van-shuttle"></i> Vehicle: <b>{{ worker.vehicle_type }}</b></span>
+          <span><i class="fa-solid fa-signal"></i> Status: <b style="color: #4ade80;">{{ worker.status }}</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <span class="badge" style="background: rgba(255,255,255,0.15); color: #ffffff; font-size: 0.85rem; padding: 6px 14px;">
+        <i class="fa-solid fa-shield-check"></i> Field Duty Active
+      </span>
+    </div>
+  </div>
+
+  <!-- Operational Metric Counters -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-warning">
+        <i class="fa-solid fa-clipboard-check"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.assigned }}</div>
+        <div class="metric-label">New Tasks Assigned</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-primary">
+        <i class="fa-solid fa-person-digging"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.in_progress }}</div>
+        <div class="metric-label">Currently In Progress</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box metric-icon-info">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <div class="metric-value">{{ stats.completed }}</div>
+        <div class="metric-label">Successfully Completed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Assigned Cleanup Tasks -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-list-check"></i>
+        Active Sanitation Tasks Awaiting Action ({{ active_tasks|length }})
+      </div>
+    </div>
+
+    {% if active_tasks %}
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% for task in active_tasks %}
+          <div style="
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            background: #ffffff;
+            display: grid;
+            grid-template-columns: 200px 1fr 220px;
+            gap: 20px;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+          ">
+            
+            <!-- Before Image Thumbnail -->
+            <div style="height: 140px; border-radius: var(--radius-md); overflow: hidden; position: relative; background: var(--slate-100); border: 1px solid var(--slate-200);">
+              {% if task.before_image %}
+                <img src="{{ url_for('static', filename='uploads/' + task.before_image) }}" alt="Task Visual" style="width: 100%; height: 100%; object-fit: cover;">
+              {% else %}
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--slate-400);">
+                  <i class="fa-solid fa-image fa-2x"></i>
+                </div>
+              {% endif %}
+              <span class="badge" style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.65); color: #ffffff;">
+                #{{ task.id }}
+              </span>
+            </div>
+
+            <!-- Task Information -->
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--slate-900);">
+                  {{ task.title }}
+                </h3>
+                <span class="badge badge-status-{{ task.status | lower | replace(' ', '') }}">
+                  {{ task.status }}
+                </span>
+                <span class="badge badge-sev-{{ task.severity | lower }}">
+                  {{ task.severity }}
+                </span>
+              </div>
+
+              <div style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 10px; display: flex; flex-direction: column; gap: 3px;">
+                <div>
+                  <i class="fa-solid fa-location-dot" style="color: var(--primary-600); width: 16px;"></i>
+                  <b>Address:</b> {{ task.address or "Coordinates recorded" }}
+                  {% if task.landmark %}(Landmark: {{ task.landmark }}){% endif %}
+                </div>
+                <div>
+                  <i class="fa-solid fa-recycle" style="color: var(--primary-600); width: 16px;"></i>
+                  <b>AI Waste Category:</b> {{ task.waste_type }}
+                </div>
+                {% if task.assignment_notes %}
+                  <div style="color: #0369a1; background: #f0f9ff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-top: 4px;">
+                    <i class="fa-solid fa-comment"></i> <b>HQ Note:</b> {{ task.assignment_notes }}
+                  </div>
+                {% endif %}
+              </div>
+
+              <div style="font-size: 0.8rem; color: var(--slate-400);">
+                Citizen Contact: {{ task.citizen_name }} ({{ task.citizen_phone or "No phone" }})
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              {% if task.status == 'Assigned' %}
+                <form method="POST" action="{{ url_for('worker.start_task', complaint_id=task.id) }}">
+                  <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fa-solid fa-play"></i> Start Cleaning
+                  </button>
+                </form>
+              {% elif task.status == 'In Progress' %}
+                <button type="button" class="btn btn-primary" style="background: #059669; width: 100%;" onclick="openCompleteModal({{ task.id }}, '{{ task.title | escape }}')">
+                  <i class="fa-solid fa-camera"></i> Upload Proof & Complete
+                </button>
+              {% endif %}
+
+              {% if task.latitude and task.longitude %}
+                <a 
+                  href="https://www.google.com/maps/dir/?api=1&destination={{ task.latitude }},{{ task.longitude }}" 
+                  target="_blank" 
+                  class="btn btn-secondary btn-sm"
+                  style="width: 100%;"
+                >
+                  <i class="fa-solid fa-diamond-turn-right"></i> GPS Navigation
+                </a>
+              {% endif %}
+
+              <a href="{{ url_for('citizen.complaint_detail', complaint_id=task.id) }}" class="btn btn-outline-primary btn-sm" style="width: 100%;">
+                <i class="fa-solid fa-file-lines"></i> View Diagnostics
+              </a>
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 40px 20px; color: var(--slate-500);">
+        <div style="font-size: 2.2rem; color: #10b981; margin-bottom: 10px;">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--slate-800);">All Caught Up!</h3>
+        <p style="font-size: 0.88rem;">You have no active cleaning tasks pending. Stand by for municipal dispatch.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Completed Tasks History with Before/After Proof -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        Recently Cleared & Verified Tasks
+      </div>
+    </div>
+
+    {% if completed_history %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+        {% for c in completed_history %}
+          <div style="border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 16px; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-weight: 800; color: var(--slate-800); font-size: 0.95rem;">#{{ c.id }} - {{ c.title }}</span>
+              <span class="badge badge-status-resolved">Resolved</span>
+            </div>
+
+            <!-- Before vs After Comparison Row -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #ef4444; margin-bottom: 4px;">BEFORE</div>
+                <div style="height: 100px; border-radius: var(--radius-sm); overflow: hidden; background: var(--slate-100); border: 1px solid var(--slate-200);">
+                  {% if c.before_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + c.before_image) }}" alt="Before" style="width: 100%; height: 100%; object-fit: cover;">
+                  {% endif %}
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #10b981; margin-bottom: 4px;">AFTER (PROOF)</div>
+                <div style="height: 100px; border-radius: var(--radius-sm); overflow: hidden; background: var(--slate-100); border: 1px solid var(--slate-200);">
+                  {% if c.after_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + c.after_image) }}" alt="After" style="width: 100%; height: 100%; object-fit: cover;">
+                  {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--slate-400);">No photo</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--slate-500); display: flex; justify-content: space-between;">
+              <span>{{ c.waste_type }}</span>
+              <span>Cleared: {{ c.completed_at | dt_format if c.completed_at else 'Recent' }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="font-size: 0.88rem; color: var(--slate-500); text-align: center; padding: 20px;">No completed tasks in history yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Complete Task & Upload Proof Modal -->
+<div id="workerCompleteModal" class="modal-overlay">
+  <div class="modal-content">
+    <form method="POST" id="completeForm" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h3 class="modal-title">Mark Task Completed & Upload Proof</h3>
+        <button type="button" class="alert-close" onclick="closeModal('workerCompleteModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p id="modal_task_title" style="font-weight: 700; color: var(--slate-700); margin-bottom: 16px; font-size: 0.9rem;"></p>
+
+        <div class="form-group">
+          <label class="form-label">Upload After-Cleaning Photograph (Proof of Work) *</label>
+          <div class="upload-dropzone" onclick="document.getElementById('after_photo').click()" style="padding: 16px;">
+            <div class="dropzone-icon" style="font-size: 1.6rem; margin-bottom: 6px;">
+              <i class="fa-solid fa-camera"></i>
+            </div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--slate-800);">Snap or select after-cleaning photo</div>
+            <div style="font-size: 0.78rem; color: var(--slate-500);">Show cleaned sidewalk / empty bins</div>
+            <input 
+              type="file" 
+              id="after_photo" 
+              name="after_photo" 
+              accept="image/*" 
+              style="display: none;" 
+              data-preview-target="worker-proof-preview"
+            >
+          </div>
+          <div id="worker-proof-preview" class="image-preview-container">
+            <!-- Injected image preview -->
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="completion_notes" class="form-label">Completion Remarks</label>
+          <textarea id="completion_notes" name="completion_notes" class="form-control" placeholder="Describe actions taken (e.g. 10 bags collected, area disinfected)..." rows="3">Garbage completely cleared and area sanitized.</textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('workerCompleteModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="background: #059669;">
+          <i class="fa-solid fa-check"></i> Submit Resolution
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openCompleteModal(complaintId, title) {
+  const form = document.getElementById('completeForm');
+  form.action = `/worker/task/${complaintId}/complete`;
+  document.getElementById('modal_task_title').innerText = `Resolving Task #${complaintId}: ${title}`;
+  openModal('workerCompleteModal');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Report Garbage – CleanCity AI{% endblock %}
+{% block page_title %}Report Garbage Problem{% endblock %}
+{% block page_subtitle %}Snap a photograph, pinpoint the exact location, and let CleanCity AI analyze and route the report{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+  <!-- AI Instructions Banner -->
+  <div class="card" style="
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+    border: 1px solid #a7f3d0;
+    margin-bottom: 24px;
+    padding: 18px 24px;
+  ">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+      <div style="
+        width: 44px; height: 44px;
+        background: #10b981;
+        color: #ffffff;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+      ">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <div>
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #065f46; margin-bottom: 4px;">
+          CleanCity Gemini AI Automated Analysis
+        </h3>
+        <p style="font-size: 0.86rem; color: #047857; line-height: 1.5;">
+          Our integrated Gemini AI model analyzes uploaded photographs to classify waste into strict municipal categories (<b>Organic, Plastic, Paper, Metal, Mixed, or Other</b>), evaluate severity (Low to Critical), and recommend suitable sanitation equipment.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('citizen.report_garbage') }}" enctype="multipart/form-data" id="reportForm">
+    <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+
+      <!-- Section 1: Photograph Upload -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-camera"></i>
+            1. Garbage Photograph
+          </div>
+          <span style="font-size: 0.75rem; color: var(--slate-500);">Supported: JPG, PNG, WEBP (Max 16MB)</span>
+        </div>
+
+        <div class="upload-dropzone" onclick="document.getElementById('garbage_photo').click()">
+          <div class="dropzone-icon">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--slate-800); margin-bottom: 4px;">
+            Click or Tap to Upload Garbage Photo
+          </h4>
+          <p style="font-size: 0.85rem; color: var(--slate-500);">
+            Ensure good lighting and capture the full accumulation for accurate AI classification
+          </p>
+          <input 
+            type="file" 
+            id="garbage_photo" 
+            name="garbage_photo" 
+            accept="image/png, image/jpeg, image/jpg, image/webp" 
+            style="display: none;" 
+            data-preview-target="photo-preview-box"
+            required
+          >
+        </div>
+
+        <div id="photo-preview-box" class="image-preview-container">
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary-700); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-check-circle"></i> Photo Ready for AI Inspection
+          </div>
+          <!-- Preview image will be injected here by main.js -->
+        </div>
+      </div>
+
+      <!-- Section 2: Problem Description -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-pen-to-square"></i>
+            2. Problem Details
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="title" class="form-label">Brief Summary / Headline *</label>
+          <input 
+            type="text" 
+            id="title" 
+            name="title" 
+            class="form-control" 
+            placeholder="e.g. Overflowing garbage bin blocking pedestrian walkway"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="description" class="form-label">Detailed Description of Problem *</label>
+          <textarea 
+            id="description" 
+            name="description" 
+            class="form-control" 
+            placeholder="Describe the nature of garbage, estimated volume, odor, pedestrian blockage, or hazard..."
+            rows="3"
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Section 3: Location Management & Map Picker -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-map-location-dot"></i>
+            3. Location & Map Pinpoint
+          </div>
+          <button type="button" id="btn-detect-gps" class="btn btn-outline-primary btn-sm">
+            <i class="fa-solid fa-location-crosshairs"></i> Detect My Location
+          </button>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 14px;">
+          Click anywhere on the map or drag the green pin to pinpoint the exact location of the garbage:
+        </p>
+
+        <!-- Leaflet Map Element -->
+        <div id="picker-map" style="height: 360px; width: 100%; border-radius: var(--radius-md); border: 1px solid var(--slate-200); margin-bottom: 16px;"></div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="latitude" class="form-label">Latitude</label>
+            <input type="text" id="latitude" name="latitude" class="form-control" readonly>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="longitude" class="form-label">Longitude</label>
+            <input type="text" id="longitude" name="longitude" class="form-control" readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address" class="form-label">Street Address (Auto-resolved from map pin)</label>
+          <input type="text" id="address" name="address" class="form-control" placeholder="e.g. 250 Broadway, Civic Center">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="landmark" class="form-label">Nearby Landmark / Specific Spot</label>
+          <input type="text" id="landmark" name="landmark" class="form-control" placeholder="e.g. In front of public park east fountain, opposite pharmacy">
+        </div>
+      </div>
+
+      <!-- Submit Section -->
+      <div style="display: flex; gap: 14px; justify-content: flex-end;">
+        <a href="{{ url_for('citizen.dashboard') }}" class="btn btn-secondary btn-lg">
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+          <i class="fa-solid fa-paper-plane"></i> Submit & Analyze with AI
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize location picker map
+  initLocationPickerMap(
+    'picker-map',
+    {{ default_lat }},
+    {{ default_lng }},
+    'latitude',
+    'longitude',
+    'address'
+  );
+
+  // Form submit state
+  const form = document.getElementById('reportForm');
+  const btn = document.getElementById('submitBtn');
+  form.addEventListener('submit', () => {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing with AI...';
+  });
+});
+</script>
+{% endblock %}
